@@ -1,0 +1,17 @@
+THƯ MỤC ẢNH CHO THIỆP
+
+Bỏ ảnh của bạn vào đúng thư mục này (photos/). Trang web tự nhận ảnh, không cần sửa code.
+
+- Định dạng: .jpg, .jpeg, .png, .webp (ảnh HEIC của iPhone hãy đổi sang JPG trước).
+- Số lượng: đẹp nhất là 6 ảnh (tối đa 8). Ảnh dọc (tỉ lệ 4:5 hoặc 3:4) hiển thị đẹp nhất.
+- Thứ tự và chú thích lấy từ TÊN FILE, ví dụ:
+      01 - Ngày đầu nhập học.jpg
+      02 - Những đêm chạy deadline.jpg
+      03 - Bạn bè thân thương.jpg
+      04 - Hoạt động CLB.jpg
+      05 - Bảo vệ luận văn.jpg
+      06 - Ngày tốt nghiệp.jpg
+  → chú thích dưới ảnh sẽ là "Ngày đầu nhập học", "Những đêm chạy deadline", ...
+- Ảnh gốc to cũng không sao: khi chạy, ảnh được tự xoay đúng chiều, thu nhỏ và nén sang WebP
+  vào public/_photos/ (thư mục sinh tự động, đừng sửa tay).
+- Khi chưa có ảnh nào, trang dùng 6 ảnh minh hoạ tạm.

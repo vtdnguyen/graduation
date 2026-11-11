@@ -1,0 +1,16 @@
+node_modules
+dist
+# ảnh đã tối ưu được sinh tự động từ photos/
+public/_photos
+# kết quả chụp màn hình kiểm thử
+shots
+*.log
+.DS_Store
+Thumbs.db
+guests.txt
+links.txt
+.deploy
+.wrangler
+wrangler.*
+CLAUDE.md
+package-lock.json
