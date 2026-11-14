@@ -137,7 +137,6 @@ export class Stage3D extends BaseActor {
     this.key.intensity = L.keyI;
     this.fill.color.setHex(L.fill);
     this.fill.intensity = L.fillI;
-    this.rig?.setSkinTone(m === 'night');
   }
 
   /** vẽ 1 khung rồi chép ngay ra canvas 2D (đọc WebGL ngay sau khi vẽ, trong cùng 1 tác vụ) */

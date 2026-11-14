@@ -19,7 +19,7 @@ export const config = {
   event: {
     title: 'Lễ Tốt Nghiệp',
     /** Giờ Việt Nam (+07:00) */
-    start: '2026-11-28T12:00:00+07:00',
+    start: '2026-11-28T13:00:00+07:00',
     /** TODO: xác nhận địa điểm & địa chỉ chính xác */
     venue: 'Trường Đại học Bách Khoa',
     address: '268 Lý Thường Kiệt, TP. Hồ Chí Minh',

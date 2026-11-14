@@ -57,11 +57,6 @@ export class Actor2D extends BaseActor {
     this.root.classList.toggle('speaking', on);
   }
 
-  setMood(m: 'day' | 'sunset' | 'night') {
-    const tone = m === 'night' ? '#ffe9db' : '#ffdcc4';
-    this.root.querySelectorAll<SVGElement>('.a2-skin').forEach((part) => part.setAttribute('fill', tone));
-  }
-
   protected setPhase(p: JumpPhase) {
     if (p === 'crouch') gsap.to(this.inner, { scaleY: 0.82, scaleX: 1.1, duration: 0.15, transformOrigin: '50% 100%' });
     else if (p === 'air') gsap.to(this.inner, { scaleY: 1.08, scaleX: 0.94, duration: 0.15 });

@@ -205,7 +205,6 @@ async function swapTo2D() {
   const old = actor;
   const a = await make2D();
   a.place({ ...old.anchor });
-  a.setMood?.(mood);
   a.setVisible(true);
   a.setAction('idle');
   actor = a;
@@ -414,7 +413,7 @@ let actorTapAt = 0;
 let actorTapped = false;
 
 // ---------- cảnh cuối: ~6 giây không ai bấm → nhân vật vươn vai, cầm mũ, nằm nghỉ ----------
-const REST_AFTER = 6000;
+const REST_AFTER = 8000;
 let restTimer = 0;
 /** đang ngồi dậy → các lần bấm dồn chỉ thả tim, không chồng động tác */
 let waking = false;
