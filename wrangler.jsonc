@@ -1,0 +1,17 @@
+// Cloudflare Workers (chỉ phục vụ file tĩnh) cho https://vtdnguyen.com/grad/
+// Route chỉ bắt /grad* → phần còn lại của vtdnguyen.com không bị ảnh hưởng.
+// Deploy: npm run deploy
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vtdnguyen-grad",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    // scripts/prepare-deploy.mjs chép dist/ vào .deploy/grad/ để URL /grad/... khớp đường dẫn file
+    "directory": "./.deploy",
+    // /grad → /grad/ tự chuyển hướng
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none"
+  },
+  "routes": [{ "pattern": "vtdnguyen.com/grad*", "zone_name": "vtdnguyen.com" }],
+  "workers_dev": false
+}

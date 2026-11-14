@@ -12,5 +12,6 @@ links.txt
 .deploy
 .wrangler
 wrangler.*
+!wrangler.jsonc
 CLAUDE.md
 package-lock.json
