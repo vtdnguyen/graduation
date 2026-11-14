@@ -1,4 +1,4 @@
-/** Nút góc trên phải: bỏ qua (trước cảnh cuối) · lưu thiệp + xem lại (cảnh cuối) · bật/tắt nhạc. */
+/** Nút góc trên phải: bỏ qua, đổi ngày/đêm, lưu thiệp, xem lại và bật/tắt nhạc. */
 import { gsap } from 'gsap';
 import { el } from '../lib/util';
 import { icons } from '../art/svg';
@@ -10,9 +10,17 @@ export class Hud {
   private skip = el('button', 'hud-btn hud-skip', `<span>Bỏ qua</span>${icons.skip}`);
   private reset = el('button', 'hud-btn hud-reset', icons.replay);
   private save = el('button', 'hud-btn hud-save', icons.photo);
+  private theme = el('button', 'hud-btn hud-theme');
 
-  constructor(parent: HTMLElement, onSkip: () => void, onReset: () => void, onSave: () => void) {
-    for (const b of [this.sound, this.skip, this.reset, this.save]) b.type = 'button';
+  constructor(
+    parent: HTMLElement,
+    onSkip: () => void,
+    onReset: () => void,
+    onSave: () => void,
+    onMoodChange: (night: boolean) => void,
+    initialNight: boolean,
+  ) {
+    for (const b of [this.sound, this.skip, this.reset, this.save, this.theme]) b.type = 'button';
     this.save.setAttribute('aria-label', 'Lưu thiệp về máy');
     this.save.title = 'Lưu thiệp về máy';
     this.save.addEventListener('click', (e) => {
@@ -29,6 +37,19 @@ export class Hud {
     };
     paint(audio.muted);
     audio.onChange(paint);
+    const paintTheme = (night: boolean) => {
+      this.theme.innerHTML = night ? icons.sun : icons.moon;
+      this.theme.setAttribute('aria-label', night ? 'Chuyển sang ban ngày' : 'Chuyển sang ban đêm');
+      this.theme.title = night ? 'Chuyển sang ban ngày' : 'Chuyển sang ban đêm';
+      this.theme.dataset.night = String(night);
+    };
+    paintTheme(initialNight);
+    this.theme.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const night = this.theme.dataset.night !== 'true';
+      paintTheme(night);
+      onMoodChange(night);
+    });
     this.sound.addEventListener('click', (e) => {
       e.stopPropagation();
       audio.toggle();
@@ -41,7 +62,7 @@ export class Hud {
       e.stopPropagation();
       gsap.to(this.reset.firstElementChild, { rotation: -360, duration: 0.5, ease: 'power2.inOut', onComplete: onReset });
     });
-    this.root.append(this.skip, this.save, this.reset, this.sound);
+    this.root.append(this.skip, this.save, this.reset, this.theme, this.sound);
     parent.append(this.root);
     gsap.set(this.skip, { autoAlpha: 0 });
     // ẩn hẳn (không chiếm chỗ) để nút nhạc luôn sát góc

@@ -27,7 +27,8 @@ const SRC_DIR = 'photos';
 const OUT_DIR = 'public/_photos';
 const ACCEPT = /\.(jpe?g|png|webp|avif|tiff?)$/i;
 const MAX_PHOTOS = 8;
-const SIZES = { thumb: 520, full: 1400 } as const;
+const PHOTO_PIPELINE_VERSION = 2;
+const SIZES = { thumb: 420, full: 1200 } as const;
 
 function captionFrom(file: string): string {
   return path
@@ -59,26 +60,30 @@ async function processPhotos(root: string, base: string, log: (m: string) => voi
   for (const [i, file] of files.entries()) {
     const abs = path.join(srcDir, file);
     const hash = crypto.createHash('sha1').update(fs.readFileSync(abs)).digest('hex').slice(0, 10);
-    const stem = `p${i + 1}-${hash}`;
+    const stem = `p${i + 1}-${hash}-v${PHOTO_PIPELINE_VERSION}`;
     const metaFile = path.join(outDir, `${stem}.json`);
-    let ratio: number;
-
+    let ratio: number | undefined;
     if (fs.existsSync(metaFile)) {
-      ratio = JSON.parse(fs.readFileSync(metaFile, 'utf8')).ratio;
-    } else {
+      const meta = JSON.parse(fs.readFileSync(metaFile, 'utf8'));
+      const thumbFile = path.join(outDir, `${stem}-thumb.webp`);
+      const fullFile = path.join(outDir, `${stem}-full.webp`);
+      if (meta.version === PHOTO_PIPELINE_VERSION && fs.existsSync(thumbFile) && fs.existsSync(fullFile)) ratio = meta.ratio;
+    }
+
+    if (ratio == null) {
       let w = 1;
       let h = 1;
       for (const [kind, width] of Object.entries(SIZES)) {
         const info = await sharp(abs)
           .rotate()
           .resize({ width, withoutEnlargement: true })
-          .webp({ quality: kind === 'thumb' ? 76 : 82 })
+          .webp({ quality: kind === 'thumb' ? 72 : 78 })
           .toFile(path.join(outDir, `${stem}-${kind}.webp`));
         w = info.width;
         h = info.height;
       }
       ratio = w / h;
-      fs.writeFileSync(metaFile, JSON.stringify({ ratio }));
+      fs.writeFileSync(metaFile, JSON.stringify({ ratio, version: PHOTO_PIPELINE_VERSION }));
       log(`[photos] Đã tối ưu ${file}`);
     }
 

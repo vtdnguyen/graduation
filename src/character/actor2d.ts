@@ -12,11 +12,11 @@ const SVG = `<svg viewBox="0 0 200 270" class="a2-svg">
   <ellipse cx="82" cy="257" rx="15" ry="8" fill="#3a3442"/><ellipse cx="118" cy="257" rx="15" ry="8" fill="#3a3442"/>
   <path d="M60 148 Q100 134 140 148 L160 248 Q100 262 40 248Z" fill="#2d3f7c" stroke="#2a2440" stroke-width="3"/>
   <path d="M90 146 L80 236 L92 238 L98 150Z M110 146 L120 236 L108 238 L102 150Z" fill="#ffc93c"/>
-  <g class="arm-r"><path d="M64 150 L46 206 Q56 214 68 208 L78 156Z" fill="#2d3f7c" stroke="#2a2440" stroke-width="3"/><circle cx="56" cy="212" r="10" fill="#ffdcc4" stroke="#2a2440" stroke-width="3"/></g>
-  <g class="arm-l"><path d="M136 150 L152 200 Q142 210 130 202 L122 156Z" fill="#2d3f7c" stroke="#2a2440" stroke-width="3"/><circle cx="141" cy="205" r="10" fill="#ffdcc4" stroke="#2a2440" stroke-width="3"/>
+  <g class="arm-r"><path d="M64 150 L46 206 Q56 214 68 208 L78 156Z" fill="#2d3f7c" stroke="#2a2440" stroke-width="3"/><circle class="a2-skin" cx="56" cy="212" r="10" fill="#ffdcc4" stroke="#2a2440" stroke-width="3"/></g>
+  <g class="arm-l"><path d="M136 150 L152 200 Q142 210 130 202 L122 156Z" fill="#2d3f7c" stroke="#2a2440" stroke-width="3"/><circle class="a2-skin" cx="141" cy="205" r="10" fill="#ffdcc4" stroke="#2a2440" stroke-width="3"/>
     <g transform="rotate(-12 141 205)"><rect x="112" y="199" width="58" height="12" rx="6" fill="#fff4dc" stroke="#2a2440" stroke-width="2.5"/><rect x="137" y="197" width="8" height="16" fill="#e8505b"/></g></g>
   <g class="a2-head">
-    <circle cx="100" cy="92" r="64" fill="#ffdcc4" stroke="#2a2440" stroke-width="3"/>
+    <circle class="a2-skin" cx="100" cy="92" r="64" fill="#ffdcc4" stroke="#2a2440" stroke-width="3"/>
     <path d="M36 98 Q32 30 100 26 Q168 30 164 98 Q152 72 132 66 Q114 82 98 70 Q82 84 62 70 Q46 80 36 98Z" fill="#3b2a22" stroke="#2a2440" stroke-width="3"/>
     <g class="a2-eyes"><ellipse cx="78" cy="104" rx="7" ry="10" fill="#2a2233"/><ellipse cx="122" cy="104" rx="7" ry="10" fill="#2a2233"/>
     <circle cx="81" cy="99" r="2.6" fill="#fff"/><circle cx="125" cy="99" r="2.6" fill="#fff"/></g>
@@ -55,6 +55,11 @@ export class Actor2D extends BaseActor {
 
   setSpeaking(on: boolean) {
     this.root.classList.toggle('speaking', on);
+  }
+
+  setMood(m: 'day' | 'sunset' | 'night') {
+    const tone = m === 'night' ? '#ffe9db' : '#ffdcc4';
+    this.root.querySelectorAll<SVGElement>('.a2-skin').forEach((part) => part.setAttribute('fill', tone));
   }
 
   protected setPhase(p: JumpPhase) {

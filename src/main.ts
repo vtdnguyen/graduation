@@ -37,7 +37,7 @@ import { detectDevice, flags, guestName } from './lib/device';
 import { computeLayout, inviteWidth, isPortrait, readSafeArea, type Layout } from './lib/layout';
 import { audio } from './lib/audio';
 import { haptic, sleep } from './lib/util';
-import { currentMood, isReturningVisitor, timeGreeting } from './lib/sky';
+import { isReturningVisitor, timeGreeting, type Mood } from './lib/sky';
 import { vnParts } from './lib/date';
 import { symbolSprite, placeholderPhoto } from './art/svg';
 import { Garden } from './scenes/garden';
@@ -49,7 +49,7 @@ import { Invite } from './scenes/invite';
 import { Hud } from './scenes/hud';
 import { Quip } from './scenes/quip';
 import { Petals } from './fx/petals';
-import { Butterflies } from './fx/butterflies';
+import { GardenInsects } from './fx/garden-insects';
 import type { Actor } from './character/actor';
 
 gsap.registerPlugin(MotionPathPlugin, DrawSVGPlugin);
@@ -58,10 +58,14 @@ type State = 'intro' | 'opening' | 'dialogue' | 'final';
 
 const device = detectDevice();
 const guest = guestName();
-// bầu trời theo giờ thực của người xem (ảnh xem trước ?og luôn là ban ngày)
-const mood = flags.og ? 'day' : currentMood();
+// Mặc định là ban ngày; ?sky=night|sunset vẫn dùng được để kiểm thử.
+const requestedMood = new URLSearchParams(location.search).get('sky');
+let mood: Mood = flags.og ? 'day' : requestedMood === 'night' || requestedMood === 'sunset' ? requestedMood : 'day';
 const returning = isReturningVisitor();
-document.querySelector('meta[name="theme-color"]')?.setAttribute('content', { day: '#8fd3ff', sunset: '#6d78c4', night: '#1d2457' }[mood]);
+function updateThemeColor() {
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', { day: '#8fd3ff', sunset: '#6d78c4', night: '#1d2457' }[mood]);
+}
+updateThemeColor();
 const app = document.getElementById('app')!;
 document.documentElement.classList.toggle('touch', device.touch);
 document.documentElement.classList.toggle('reduced', device.reducedMotion);
@@ -91,7 +95,7 @@ const introBackHost = host();
 const introHost = host();
 const photosHost = host();
 const frontHost = host();
-const butterflyHost = host();
+const insectHost = host();
 const actorLayer = document.createElement('div');
 actorLayer.className = 'layer actor-layer';
 const stageCanvas = document.createElement('canvas');
@@ -99,7 +103,7 @@ stageCanvas.className = 'stage3d';
 actorLayer.append(stageCanvas);
 const fxCanvas = document.createElement('canvas');
 fxCanvas.className = 'layer fx';
-app.append(gardenHost, introBackHost, introHost, photosHost, actorLayer, frontHost, butterflyHost, fxCanvas);
+app.append(gardenHost, introBackHost, introHost, photosHost, actorLayer, frontHost, insectHost, fxCanvas);
 
 const date = vnParts(config.event.start);
 const garden = new Garden(gardenHost, frontHost, 'Chúc Mừng Tốt Nghiệp');
@@ -115,10 +119,12 @@ const envelope = new Envelope(introBackHost, introHost, {
 });
 const lightbox = new Lightbox(document.body, photos);
 const photoWall = new Photos(photosHost, photos, (i, from) => lightbox.show(i, from));
-const butterflies = new Butterflies(butterflyHost, device.tier === 'high' ? 6 : device.tier === 'mid' ? 4 : 3);
+const gardenInsects = new GardenInsects(insectHost, device.tier === 'high' ? 6 : device.tier === 'mid' ? 4 : 3);
+gardenInsects.setMood(mood);
 const petals = new Petals(fxCanvas, device.tier, device.reducedMotion);
 petals.setMood(mood);
 audio.night = mood === 'night';
+let gardenInsectsStarted = false;
 const dialogue = new Dialogue(app);
 const invite = new Invite(app, config, guest);
 const quip = new Quip(app, config.quips);
@@ -127,6 +133,8 @@ const hud = new Hud(
   () => skipToFinal(),
   () => location.reload(),
   () => void saveKeepsake(),
+  (night) => setMood(night ? 'night' : 'day'),
+  mood === 'night',
 );
 
 // ---------- lưu thiệp về máy (module tải khi bấm) ----------
@@ -154,6 +162,25 @@ let master: gsap.core.Timeline | null = null;
 let runId = 0;
 let actor: Actor | null = null;
 
+function setMood(next: 'day' | 'night') {
+  if (mood === next) return;
+  mood = next;
+  garden.setMood(next);
+  gardenInsects.setMood(next);
+  petals.setMood(next);
+  audio.night = next === 'night';
+  actor?.setMood?.(next);
+  updateThemeColor();
+  relayout();
+  if (state !== 'intro') enterGardenInsects(true);
+}
+
+function enterGardenInsects(instant = false) {
+  if (gardenInsectsStarted) return;
+  gardenInsectsStarted = true;
+  gardenInsects.enter(instant);
+}
+
 // ---------- nhân vật: 3D nếu được, 2D nếu không ----------
 async function make2D(): Promise<Actor> {
   const { Actor2D } = await import('./character/actor2d');
@@ -178,6 +205,7 @@ async function swapTo2D() {
   const old = actor;
   const a = await make2D();
   a.place({ ...old.anchor });
+  a.setMood?.(mood);
   a.setVisible(true);
   a.setAction('idle');
   actor = a;
@@ -221,7 +249,7 @@ function relayout() {
   photoWall.relayout(L);
   dialogue.relayout(L);
   invite.relayout(L);
-  butterflies.resize(W, H);
+  gardenInsects.resize(W, H);
   petals.resize(W, H);
   if (actor) {
     actor.resize(W, H, L.char.h);
@@ -245,7 +273,7 @@ function frame(dt: number) {
   clock += dt;
   actor?.update(dt, clock);
   petals.update(dt, clock);
-  butterflies.update(dt, clock);
+  gardenInsects.update(dt, clock);
   fpsWatch(dt);
 }
 const onTick = (_t: number, deltaMs: number) => frame(deltaMs / 1000);
@@ -300,7 +328,7 @@ async function open() {
   tl.add(envelope.fadeBackdrop(), tb - 0.1);
   tl.call(() => garden.bloom(), [], tb);
   tl.call(() => {
-    if (mood !== 'night') butterflies.enter();
+    enterGardenInsects();
     fpsArmed = true;
   }, [], tb + 0.8);
   tl.add(photoWall.flyOut(c, tb + 0.2), tb + 0.2);
@@ -361,7 +389,7 @@ async function skipToFinal() {
   envelope.removeNow();
   garden.setBloomed();
   photoWall.setPlaced();
-  if (mood !== 'night') butterflies.enter(true);
+  enterGardenInsects(true);
   fpsArmed = true;
   state = 'final';
   hud.showSkip(false);

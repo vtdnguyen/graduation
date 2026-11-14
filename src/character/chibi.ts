@@ -18,6 +18,7 @@ export interface Rig {
   setPhase(p: JumpPhase): void;
   /** hướng nhìn, -1..1 theo mỗi trục (0,0 = nhìn thẳng) */
   setLook(x: number, y: number): void;
+  setSkinTone(night: boolean): void;
   update(dt: number, t: number): void;
   /** vươn vai → cầm mũ → nằm nghiêng. true nếu nằm xong, false nếu bị ngắt giữa chừng */
   lieDown(): Promise<boolean>;
@@ -154,6 +155,7 @@ const REACH: Partial<Pose> = { lSz: 2.55, lSx: -0.35, lEx: -0.25, lEz: -0.55, hx
 
 export function buildChibi(): Rig {
   const root = new THREE.Group();
+  const skinMaterial = toon(C.skin);
   // root > lieGroup (nằm nghiêng) > body (co giãn, nghiêng nhẹ)
   const lieGroup = new THREE.Group();
   const body = new THREE.Group();
@@ -526,6 +528,9 @@ export function buildChibi(): Rig {
 
   return {
     object: root,
+    setSkinTone(night) {
+      skinMaterial.color.setHex(night ? 0xffe9db : C.skin);
+    },
     setAction(a) {
       if (a === 'cheer' && action !== 'cheer' && clock - lastCapToss > 3) {
         capT = 0;

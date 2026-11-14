@@ -1,6 +1,6 @@
 /** Xem ảnh lớn: vuốt trái/phải hoặc bấm mũi tên để chuyển, chạm nền để đóng. */
 import { gsap } from 'gsap';
-import { el, escapeHtml } from '../lib/util';
+import { el } from '../lib/util';
 import { icons } from '../art/svg';
 import type { PhotoData } from './photos';
 
@@ -11,6 +11,8 @@ export class Lightbox {
   private cap = el('figcaption', 'lb-cap');
   private idx = 0;
   private open = false;
+  private imageRequest = 0;
+  private fullImages = new Map<string, HTMLImageElement>();
 
   constructor(
     parent: HTMLElement,
@@ -18,6 +20,7 @@ export class Lightbox {
   ) {
     this.img.alt = '';
     this.img.draggable = false;
+    this.img.decoding = 'async';
     const frame = el('div', 'lb-frame');
     frame.append(this.img, this.cap);
     this.fig.append(frame);
@@ -65,14 +68,65 @@ export class Lightbox {
   private setPhoto(i: number) {
     this.idx = (i + this.list.length) % this.list.length;
     const p = this.list[this.idx];
-    this.img.src = p.full;
+    const request = ++this.imageRequest;
+    this.showImage(p.thumb, request);
     this.img.style.aspectRatio = String(p.ratio);
-    this.cap.innerHTML = escapeHtml(p.caption);
+    this.cap.textContent = p.caption;
+
+    const full = this.loadFull(p.full, 'high');
+    const showFull = () => {
+      if (request === this.imageRequest && this.open) this.showImage(p.full, request);
+    };
+    if (full.complete) {
+      if (full.naturalWidth) showFull();
+      else console.warn(`[photo] Không tải được ảnh ${p.full}`);
+    } else {
+      full.addEventListener('load', showFull, { once: true });
+      full.addEventListener(
+        'error',
+        () => {
+          if (request === this.imageRequest) console.warn(`[photo] Không tải được ảnh ${p.full}`);
+        },
+        { once: true },
+      );
+    }
+
+    this.preloadFull(this.idx + 1);
+    this.preloadFull(this.idx - 1);
+  }
+
+  private showImage(src: string, request: number) {
+    this.img.classList.add('loading');
+    this.img.onload = () => {
+      if (request === this.imageRequest && this.img.getAttribute('src') === src) this.img.classList.remove('loading');
+    };
+    this.img.src = src;
+    if (this.img.complete && this.img.naturalWidth) this.img.classList.remove('loading');
+  }
+
+  private loadFull(src: string, priority: 'high' | 'low') {
+    let image = this.fullImages.get(src);
+    if (!image) {
+      image = new Image();
+      image.decoding = 'async';
+      image.fetchPriority = priority;
+      this.fullImages.set(src, image);
+      image.src = src;
+    } else if (!image.complete && priority === 'high') {
+      image.fetchPriority = 'high';
+    }
+    return image;
+  }
+
+  private preloadFull(i: number) {
+    const index = (i + this.list.length) % this.list.length;
+    const p = this.list[index];
+    if (p) this.loadFull(p.full, 'low');
   }
 
   show(i: number, from?: HTMLElement) {
-    this.setPhoto(i);
     this.open = true;
+    this.setPhoto(i);
     this.root.classList.add('on');
     gsap.fromTo(this.root, { opacity: 0 }, { opacity: 1, duration: 0.3 });
     if (from) {
@@ -102,6 +156,7 @@ export class Lightbox {
   hide() {
     if (!this.open) return;
     this.open = false;
+    this.imageRequest++;
     gsap.to(this.root, {
       opacity: 0,
       duration: 0.25,

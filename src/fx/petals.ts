@@ -1,6 +1,6 @@
 /**
- * Một canvas 2D duy nhất cho mọi hạt: cánh hoa rơi lả tả, đốm sáng bay lên (ban đêm: đom đóm),
- * các chùm bung (cánh hoa / giấy màu / tim / mũ cử nhân) và sao bay quanh đầu khi nhân vật chóng mặt.
+ * Một canvas 2D duy nhất cho cánh hoa, đốm sáng ban ngày, chùm bung và sao chóng mặt.
+ * Đom đóm ban đêm chuyển động trong lớp DOM riêng để không vẽ lại chúng trên canvas toàn màn.
  * Tự viết thay cho thư viện confetti (thư viện đó tốn ~1s khởi tạo lúc tải trang).
  */
 import type { Tier } from '../lib/device';
@@ -128,9 +128,9 @@ export class Petals {
     const target = Math.round(Math.min(34, (W * H) / 40000) * this.density) + 4;
     while (this.petals.length < target) this.petals.push(this.spawn(true));
     this.petals.length = target;
-    // ban đêm: ít cánh hoa, nhiều đom đóm
+    // Ban đêm: giảm cánh hoa; đom đóm chạy ở lớp DOM riêng để tránh vẽ lại trên canvas toàn màn.
     if (this.mood === 'night') this.petals.length = Math.max(3, Math.round(target * 0.3));
-    const motes = Math.round((this.mood === 'night' ? 30 : 14) * this.density);
+    const motes = this.mood === 'night' ? 0 : Math.round(14 * this.density);
     while (this.motes.length < motes) this.motes.push(this.spawnMote(true));
     this.motes.length = motes;
   }
@@ -164,10 +164,6 @@ export class Petals {
   }
 
   private spawnMote(anywhere: boolean): Mote {
-    if (this.mood === 'night') {
-      // đom đóm: lơ lửng ở nửa dưới (vùng cỏ, bụi hoa)
-      return { x: Math.random() * this.W, y: this.H * (0.35 + Math.random() * 0.62), r: 1.4 + Math.random() * 1.6, ph: Math.random() * 6, v: 0.4 + Math.random() * 0.8 };
-    }
     return { x: Math.random() * this.W, y: anywhere ? Math.random() * this.H : this.H + 10, r: 1.5 + Math.random() * 2.5, ph: Math.random() * 6, v: 8 + Math.random() * 14 };
   }
 
@@ -284,27 +280,19 @@ export class Petals {
       ctx.fill();
     }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    const night = this.mood === 'night';
     for (const m of this.motes) {
-      if (night) {
-        // đom đóm bay lượn chậm, nhấp nháy
-        m.ph += dt * m.v;
-        m.x += Math.cos(m.ph * 1.3) * 14 * dt;
-        m.y += Math.sin(m.ph) * 10 * dt;
-      } else {
-        m.y -= m.v * dt;
-        m.ph += dt * 2;
-        m.x += Math.sin(m.ph) * 6 * dt;
-        if (m.y < -10) Object.assign(m, this.spawnMote(false));
-      }
-      const a = night ? Math.max(0, 0.15 + 0.85 * Math.sin(m.ph * 2.3)) : 0.35 + 0.35 * Math.sin(m.ph * 1.7);
+      m.y -= m.v * dt;
+      m.ph += dt * 2;
+      m.x += Math.sin(m.ph) * 6 * dt;
+      if (m.y < -10) Object.assign(m, this.spawnMote(false));
+      const a = 0.35 + 0.35 * Math.sin(m.ph * 1.7);
       ctx.globalAlpha = a;
-      ctx.fillStyle = night ? '#d9ff7a' : this.mood === 'sunset' ? '#ffd9a0' : '#fff8c8';
+      ctx.fillStyle = this.mood === 'sunset' ? '#ffd9a0' : '#fff8c8';
       ctx.beginPath();
       ctx.arc(m.x, m.y, m.r * 2.4, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = Math.min(1, a + 0.3);
-      ctx.fillStyle = night ? '#f6ffd0' : '#ffffff';
+      ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.arc(m.x, m.y, m.r * 0.8, 0, Math.PI * 2);
       ctx.fill();

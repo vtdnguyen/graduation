@@ -1000,6 +1000,41 @@ svg {
   }
 }
 
+.garden-insects:not(.active) .bf,
+.garden-insects:not(.active) .ff,
+.garden-insects.active .ff {
+  display: none;
+}
+.ff {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+.ff-light {
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: #efff9a;
+  box-shadow: 0 0 7px 3px rgba(217, 255, 122, 0.8), 0 0 15px 6px rgba(217, 255, 122, 0.35);
+  animation: fireflyGlow 2.8s ease-in-out infinite;
+}
+@keyframes fireflyGlow {
+  0%,
+  100% {
+    opacity: 0.18;
+  }
+  24% {
+    opacity: 0.95;
+  }
+  46% {
+    opacity: 0.35;
+  }
+  68% {
+    opacity: 1;
+  }
+}
+
 .fx,
 .confetti {
   width: 100%;
@@ -1462,6 +1497,10 @@ svg {
   object-fit: contain;
   border-radius: 3px;
   background: #f3f3f3;
+  transition: opacity 0.12s;
+}
+.lb-img.loading {
+  opacity: 0;
 }
 .lb-cap {
   font: 700 22px / 1.2 var(--f-script);
@@ -1532,11 +1571,13 @@ svg {
   width: 18px;
   height: 18px;
 }
-.hud-sound {
+.hud-sound,
+.hud-theme {
   width: 38px;
   padding: 0;
 }
-.hud-sound svg {
+.hud-sound svg,
+.hud-theme svg {
   width: 20px;
   height: 20px;
 }
@@ -1655,9 +1696,14 @@ html[data-sky='night'] .sky {
     radial-gradient(70% 45% at 85% 0%, rgba(255, 247, 214, 0.22), rgba(255, 247, 214, 0) 60%),
     linear-gradient(180deg, #232a63 0%, #3a3f8c 45%, #75649f 80%, #b48aa6 100%);
 }
-html[data-sky='night'] .sun,
-html[data-sky='night'] .butterflies {
+html[data-sky='night'] .sun {
   display: none;
+}
+html[data-sky='night'] .garden-insects.active .bf {
+  display: none;
+}
+html[data-sky='night'] .garden-insects.active .ff {
+  display: block;
 }
 html[data-sky='night'] .moon,
 html[data-sky='night'] .stars,
