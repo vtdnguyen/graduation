@@ -204,6 +204,7 @@ async function make3D(): Promise<Actor> {
   const s = new Stage3D(stageCanvas, {
     dpr: device.dpr,
     antialias: device.tier !== 'low',
+    pixelBudget: device.touch ? 1_500_000 : 3_000_000,
     onContextLost: () => void swapTo2D(),
   });
   await s.init();
@@ -242,6 +243,12 @@ async function waitActor(maxMs: number): Promise<Actor> {
 }
 
 // ---------- bố cục ----------
+// Cảnh cuối trên màn dọc: khung nhỏ theo nhân vật, cộng 25% cho tay/mũ
+// và phối cảnh khi nhân vật đứng lệch sang phải thiệp.
+function finalCanvasHeight() {
+  return L.charFinal.h * (L.portrait ? 1.25 : 1);
+}
+
 function relayout() {
   if (device.ios) {
     // Chỉ mở rộng lớp vẽ, không dùng screen.height để đặt nút/thiệp.
@@ -275,7 +282,7 @@ function relayout() {
   gardenInsects.resize(W, H);
   petals.resize(W, H);
   if (actor) {
-    actor.resize(W, H, L.char.h);
+    actor.resize(W, H, state === 'final' && !actor.busy ? finalCanvasHeight() : Math.max(L.char.h, finalCanvasHeight()));
     if (!actor.busy && state !== 'intro') actor.place(state === 'final' ? L.charFinal : L.char);
   }
 }
@@ -311,15 +318,20 @@ let fpsArmed = false;
 let fpsDone = false;
 function fpsWatch(dt: number) {
   if (!fpsArmed || fpsDone) return;
+  // Không đánh giá chất lượng từ tải shader, chuyển cảnh, tab ẩn hay bàn phím.
+  if (state !== 'final' || document.hidden || wishes.isOpen || !actor || actor.busy || dt > 0.25) {
+    fpsAcc = fpsN = 0;
+    return;
+  }
   fpsAcc += dt;
   fpsN++;
-  if (fpsAcc > 3) {
+  if (fpsAcc > 4) {
     fpsDone = true;
     const avg = fpsAcc / fpsN;
     if (avg > 1 / 35) {
       petals.setDensity(0.5);
       const s = actor as unknown as { setPixelRatio?: (d: number) => void };
-      s?.setPixelRatio?.(1);
+      s?.setPixelRatio?.(Math.min(device.dpr, device.touch ? 2 : 1.5));
       document.documentElement.classList.add('lite');
     }
   }
@@ -394,6 +406,7 @@ async function showFinal(a: Actor, id: number) {
     await a.jumpTo(L.charFinal, { duration: 0.8, height: L.charFinal.h * 0.9 });
   }
   if (id !== runId) return;
+  a.resize(L.W, L.H, finalCanvasHeight());
   a.setAction('cheer');
   petals.celebrate();
   petals.capRain();
@@ -426,6 +439,7 @@ async function skipToFinal() {
   a.setVisible(true);
   a.setSpeaking(false);
   a.place(L.charFinal);
+  a.resize(L.W, L.H, finalCanvasHeight());
   a.setAction('wave');
   await sleep(2000);
   if (id !== runId) return;

@@ -53,7 +53,9 @@ export function detectDevice(): DeviceInfo {
     reducedMotion,
     webgl: webgl && tier !== 'low',
     tier,
-    dpr: Math.min(window.devicePixelRatio || 1, tier === 'high' ? 2 : 1.5),
+    // Canvas nhân vật có giới hạn điểm ảnh riêng; màn Retina cần đủ mật độ
+    // kể cả khi thiếu thông tin RAM/CPU và bị xếp tier mid.
+    dpr: Math.min(window.devicePixelRatio || 1, touch && tier !== 'low' ? 3 : tier === 'high' ? 2 : 1.5),
   };
 }
 

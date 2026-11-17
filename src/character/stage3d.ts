@@ -20,6 +20,7 @@ const BOX_BELOW = 0.2;
 export interface Stage3DOptions {
   dpr: number;
   antialias: boolean;
+  pixelBudget?: number;
   onContextLost?: () => void;
 }
 
@@ -44,13 +45,17 @@ export class Stage3D extends BaseActor {
   private boxY = 0;
   private tmpV = new THREE.Vector3();
   private needsClear = false;
+  private targetDpr = 1;
+  private readonly pixelBudget: number;
 
   constructor(
     private canvas: HTMLCanvasElement,
     o: Stage3DOptions,
   ) {
     super();
+    this.pixelBudget = o.pixelBudget ?? 3_000_000;
     this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: o.antialias, powerPreference: 'default', premultipliedAlpha: true });
+    this.targetDpr = o.dpr;
     this.renderer.setPixelRatio(o.dpr);
     this.renderer.setClearColor(0x000000, 0);
     this.scene.add(this.hemi);
@@ -107,7 +112,7 @@ export class Stage3D extends BaseActor {
     this.hMax = hMax;
     this.boxW = Math.ceil(hMax * BOX_W);
     this.boxH = Math.ceil(hMax * (BOX_ABOVE + BOX_BELOW));
-    this.renderer.setSize(this.boxW, this.boxH, false);
+    this.sizeBuffer();
     this.canvas.style.width = `${this.boxW}px`;
     this.canvas.style.height = `${this.boxH}px`;
     const d = H / 2 / Math.tan(THREE.MathUtils.degToRad(FOV / 2));
@@ -165,7 +170,14 @@ export class Stage3D extends BaseActor {
   }
 
   setPixelRatio(dpr: number) {
-    this.renderer.setPixelRatio(dpr);
+    this.targetDpr = dpr;
+    this.sizeBuffer();
+  }
+
+  private sizeBuffer() {
+    // Giới hạn lượng điểm ảnh thay vì ép mọi điện thoại xuống 1x.
+    const dpr = Math.min(this.targetDpr, Math.sqrt(this.pixelBudget / (this.boxW * this.boxH)));
+    if (Math.abs(this.renderer.getPixelRatio() - dpr) > 0.001) this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(this.boxW, this.boxH, false);
   }
 
