@@ -112,3 +112,9 @@ Tham số URL để thử: `?skip` (tới cảnh cuối), `?to=Tên` (cá nhân 
 - [ ] Thử trên máy thật: Messenger iOS/Android, Zalo, Facebook in-app; kiểm tra ảnh xem trước link
 
 Xóa lời nhắn thử: `node scripts/clear-wishes.mjs --remote --name "Tên"` xem trước; thêm `--yes` để xóa theo tên chính xác. Bỏ `--name` chọn toàn bộ; dùng `--local` cho dữ liệu dev. Nút xem lại đã được gỡ.
+
+## Safari iOS — bản sửa local đang chờ thử máy thật
+- Không deploy cho tới khi chủ dự án yêu cầu. Dev dùng `npm run dev` (LAN), API local `npm run dev:api`.
+- `ios-edge` được đặt ngay trong head trước paint. Trên iOS, `#app` nằm trong document flow; HUD và modal dùng absolute + tọa độ trang từ visualViewport/scrollY, tránh fixed/sticky kích hoạt dải màu Safari. Nền dùng large viewport/screen height; nút dùng visualViewport + safe-area.
+- Probe safe-area là absolute ở (0,0), không làm dài trang. Các bản vá fixed/absolute và svh cũ ở phần lưu ý phía trên đã được thay thế.
+- Kiểm thử: `node scripts/test-ios-first-paint.mjs`, `node scripts/test-safe-viewport.mjs`, `node scripts/test-mobile-panels.mjs`. WebKit desktop không mô phỏng được thanh kính Safari thật; vẫn cần thử iPhone từ lần mở trang đầu.

@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#8fd3ff" />
+    <script>
+      // Áp dụng trước lần paint đầu, tránh Safari lưu màu từ lớp fixed tạm thời.
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+        document.documentElement.classList.add('ios-edge');
+        document.querySelector('meta[name="theme-color"]')?.remove();
+      }
+    </script>
     <meta name="format-detection" content="telephone=no" />
     <title>%%TITLE%%</title>
     <meta name="description" content="%%DESC%%" />
@@ -25,6 +32,7 @@
         height: 100%;
         background: linear-gradient(#8fd3ff, #c4ebff 52%, #9edc8e 52%, #7fd06e);
       }
+      html.ios-edge, .ios-edge body { height: auto; min-height: 100svh; }
     </style>
   </head>
   <body>

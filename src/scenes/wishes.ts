@@ -40,7 +40,8 @@ export class Wishes {
       const editing = active === this.message || active === this.nameInput;
       this.root.classList.toggle('wish-keyboard', this.openingHeight - height > 120 || (editing && height < 500));
       this.root.style.height = `${height}px`;
-      this.root.style.top = `${v?.offsetTop ?? 0}px`;
+      const pageOffset = document.documentElement.classList.contains('ios-edge') ? window.scrollY : 0;
+      this.root.style.top = `${pageOffset + (v?.offsetTop ?? 0)}px`;
       this.root.style.setProperty('--wish-visible-height', `${height}px`);
       // Cuộn riêng nội dung panel, không kéo cả trang theo ô nhập trên Safari.
       if (editing) {
@@ -144,12 +145,13 @@ export class Wishes {
       this.root.hidden = false;
       this.background = [...document.body.children].filter((node): node is HTMLElement => node instanceof HTMLElement && node !== this.root && !['SCRIPT', 'STYLE'].includes(node.tagName))
         .map((node) => ({ node, aria: node.getAttribute('aria-hidden'), inert: node.hasAttribute('inert') }));
-      this.panel.focus();
+      this.panel.focus({ preventScroll: true });
       for (const { node } of this.background) { node.setAttribute('aria-hidden', 'true'); node.setAttribute('inert', ''); }
       this.viewport();
       window.visualViewport?.addEventListener('resize', this.viewport);
       window.visualViewport?.addEventListener('scroll', this.viewport);
       window.addEventListener('resize', this.viewport);
+      window.addEventListener('scroll', this.viewport, { passive: true });
       audio.start();
       audio.play('pop', { volume: 0.4 });
       this.onOpen();
@@ -164,7 +166,7 @@ export class Wishes {
     this.content.innerHTML = this.heading(copy.title);
     this.editName(!this.sender);
     this.content.append(this.form);
-    this.panel.focus();
+    this.panel.focus({ preventScroll: true });
   }
 
   inbox() {
@@ -178,7 +180,7 @@ export class Wishes {
     write.type = 'button';
     write.addEventListener('click', () => this.compose());
     this.content.append(list, more, write);
-    this.panel.focus();
+    this.panel.focus({ preventScroll: true });
     let cursor: number | null = null;
     const run = this.listRun;
     const load = async () => {
@@ -237,6 +239,7 @@ export class Wishes {
     window.visualViewport?.removeEventListener('resize', this.viewport);
     window.visualViewport?.removeEventListener('scroll', this.viewport);
     window.removeEventListener('resize', this.viewport);
+    window.removeEventListener('scroll', this.viewport);
     this.previousFocus?.focus({ preventScroll: true });
     this.onClose();
   }

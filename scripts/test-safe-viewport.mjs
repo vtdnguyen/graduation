@@ -22,7 +22,7 @@ try {
   assert.equal(await p.locator('meta[name="theme-color"]').count(),0);
   assert.ok(card.y+card.height<=top+height-34-11);
   assert.ok(hud.y>=top+44);
-  assert.equal(await p.locator('#app').evaluate(e=>getComputedStyle(e).position),'absolute');
+  assert.equal(await p.locator('#app').evaluate(e=>getComputedStyle(e).position),'relative');
   assert.equal(await p.locator('.inv-wish').evaluate(e=>{const r=e.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('.inv-wish')===e}),true);
  }
  console.log('PASS WebKit: nền phủ large viewport, thanh nút tránh notch, nút gửi trên home indicator, cập nhật khi thanh Safari thay đổi.');

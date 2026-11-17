@@ -249,7 +249,16 @@ function finalCanvasHeight() {
   return L.charFinal.h * (L.portrait ? 1.25 : 1);
 }
 
+function syncViewportUI() {
+  const viewport = window.visualViewport;
+  const style = document.documentElement.style;
+  style.setProperty('--visible-top', `${viewport?.offsetTop ?? 0}px`);
+  style.setProperty('--page-visible-top', `${window.scrollY + (viewport?.offsetTop ?? 0)}px`);
+  style.setProperty('--page-visible-height', `${viewport?.height ?? window.innerHeight}px`);
+}
+
 function relayout() {
+  syncViewportUI();
   if (device.ios) {
     // Chỉ mở rộng lớp vẽ, không dùng screen.height để đặt nút/thiệp.
     // Một số Safari báo large viewport vẫn ngắn hơn màn hình phía sau toolbar.
@@ -288,12 +297,15 @@ function relayout() {
 }
 let raf = 0;
 const onResize = () => {
+  syncViewportUI();
   if (wishes.isOpen) return;
   cancelAnimationFrame(raf);
   raf = requestAnimationFrame(relayout);
 };
 window.addEventListener('resize', onResize);
-window.addEventListener('orientationchange', () => setTimeout(relayout, 250));
+window.addEventListener('scroll', onResize, { passive: true });
+window.addEventListener('pageshow', onResize);
+window.addEventListener('orientationchange', () => setTimeout(onResize, 250));
 window.visualViewport?.addEventListener('resize', onResize);
 window.visualViewport?.addEventListener('scroll', onResize);
 // font tải xong làm đổi chiều cao chữ → đo lại thiệp mời

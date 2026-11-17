@@ -40,6 +40,7 @@
   background: rgba(25, 48, 42, 0.55);
   isolation: isolate;
 }
+.ios-edge .wishes-overlay { position: absolute; }
 .wishes-panel {
   position: relative;
   display: flex;

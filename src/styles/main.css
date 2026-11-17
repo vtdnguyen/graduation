@@ -67,13 +67,15 @@ body {
   min-height: 100%;
   min-height: 100lvh;
 }
+.ios-edge { overflow-x: hidden; overflow-y: auto; }
 .ios-edge body {
+  overflow: visible;
   min-height: max(100lvh, var(--scene-screen-height, 100%));
   background-color: #5fbb5a;
 }
 .ios-edge #app {
-  position: absolute;
-  bottom: auto;
+  position: relative;
+  inset: auto;
   height: auto;
   min-height: 100%;
   min-height: 100lvh;
@@ -81,6 +83,18 @@ body {
 }
 .ios-edge[data-sky='night'], .ios-edge[data-sky='night'] body { background-color: #234932; }
 .ios-edge[data-sky='sunset'], .ios-edge[data-sky='sunset'] body { background-color: #527b49; }
+/* Không có lớp fixed/sticky sát mép trên iOS: Safari có thể biến các lớp đó
+   thành dải màu đặc. Các nút/panel bám visual viewport bằng tọa độ trang. */
+.ios-edge .hud {
+  position: absolute;
+  top: calc(var(--page-visible-top, 0px) + env(safe-area-inset-top) + 8px);
+}
+.ios-edge .lightbox, .ios-edge .keepsake {
+  position: absolute;
+  inset: auto 0;
+  top: var(--page-visible-top, 0px);
+  height: var(--page-visible-height, 100svh);
+}
 #app.over-actor {
   cursor: pointer;
 }

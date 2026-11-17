@@ -57,7 +57,7 @@ export function readSafeArea(): Safe {
   if (!probe) {
     probe = document.createElement('div');
     probe.style.cssText =
-      'position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+      'position:absolute;top:0;left:0;width:0;height:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
     document.body.appendChild(probe);
   }
   const cs = getComputedStyle(probe);
