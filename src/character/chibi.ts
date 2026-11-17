@@ -15,6 +15,7 @@ export interface Rig {
   object: THREE.Object3D;
   setAction(a: ActionName): void;
   setSpeaking(on: boolean): void;
+  setBow(amount: number): void;
   setPhase(p: JumpPhase): void;
   /** hướng nhìn, -1..1 theo mỗi trục (0,0 = nhìn thẳng) */
   setLook(x: number, y: number): void;
@@ -348,6 +349,7 @@ export function buildChibi(): Rig {
   const P: Pose = { bodyY: 0, sx: 1, sy: 1, bodyRz: 0, hx: 0, hy: 0, hz: 0, rSx: 0, rSz: -0.2, rEx: 0, rEz: 0.15, lSx: -0.15, lSz: 0.2, lEx: -1.25, lEz: -0.25 };
   const T: Pose = { ...P };
   let action: ActionName = 'idle';
+  let bow = 0;
   let phase: JumpPhase | null = null;
   let phaseT = 0;
   let speaking = false;
@@ -444,6 +446,9 @@ export function buildChibi(): Rig {
         hx: -0.14,
       });
     }
+    if (bow > 0) {
+      blend(T, { hx: 0.48, hy: 0, hz: 0, bodyRz: 0, rSx: -0.35, rSz: -0.12, rEx: -0.35, lSx: -0.35, lSz: 0.12 }, bow);
+    }
     if (phase === 'crouch') {
       Object.assign(T, { sy: 0.8, sx: 1.12, bodyY: 0, rSz: -0.45, rSx: 0.5, lSz: 0.45, lSx: 0.5, lEx: -0.5, hx: 0.12 });
     } else if (phase === 'air') {
@@ -526,6 +531,7 @@ export function buildChibi(): Rig {
 
   return {
     object: root,
+    setBow(amount) { bow = amount; },
     setAction(a) {
       if (a === 'cheer' && action !== 'cheer' && clock - lastCapToss > 3) {
         capT = 0;
@@ -617,6 +623,7 @@ export function buildChibi(): Rig {
       body.position.y = P.bodyY;
       body.scale.set(P.sx, P.sy, P.sx);
       body.rotation.z = P.bodyRz;
+      body.rotation.x = bow * 0.28;
       headPivot.rotation.set(P.hx, P.hy, P.hz);
       armR.shoulder.rotation.set(P.rSx, 0, P.rSz);
       armR.elbow.rotation.set(P.rEx, 0, P.rEz);

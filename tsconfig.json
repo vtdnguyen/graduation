@@ -16,5 +16,5 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["src", "vite-plugins", "vite.config.ts"]
+  "include": ["src", "server", "vite-plugins", "vite.config.ts"]
 }

@@ -94,7 +94,7 @@ export function computeLayout(W: number, H: number, safe: Safe, photoCount: numb
     const photoW = clamp(Math.min(((W * 0.96) / N) * 1.3, (uh * 0.15) / 1.38), 54, 130);
 
     const inviteMaxH = uh - BOTTOM_GAP - HUD_H - 90;
-    const ih = Math.min(inviteH, inviteMaxH);
+    const ih = Math.min(Math.max(inviteH, uh * 0.59), inviteMaxH);
     const invite: Rect = { x: (W - iw) / 2, y: bottom - BOTTOM_GAP - ih, w: iw, h: ih };
     // nhân vật đứng trên mép thiệp: thu nhỏ nếu thiếu chỗ để không bị cắt đầu
     const fh = clamp(Math.min(uh * 0.19, invite.y - top - 10), 72, 170);
@@ -127,7 +127,7 @@ export function computeLayout(W: number, H: number, safe: Safe, photoCount: numb
 
   // ---- màn hình ngang (laptop, tablet ngang, điện thoại xoay ngang) ----
   const inviteMaxH = Math.min(uh - 16 - BOTTOM_GAP, 640);
-  const ih = Math.min(inviteH, inviteMaxH);
+  const ih = Math.min(Math.max(inviteH, uh * (compact ? 0.86 : 0.69)), inviteMaxH);
   const iy = Math.min(top + (uh - ih) / 2, bottom - BOTTOM_GAP - ih);
   const invite: Rect = { x: W - iw - Math.max(W * 0.04, 16 + safe.right), y: iy, w: iw, h: ih };
   const leftW = invite.x - W * 0.02;

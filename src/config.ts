@@ -19,7 +19,7 @@ export const config = {
   event: {
     title: 'Lễ Tốt Nghiệp',
     /** Giờ Việt Nam (+07:00) */
-    start: '2026-11-28T13:00:00+07:00',
+    start: '2026-11-28T12:00:00+07:00',
     /** TODO: xác nhận địa điểm & địa chỉ chính xác */
     venue: 'Trường Đại học Bách Khoa',
     address: '268 Lý Thường Kiệt, TP. Hồ Chí Minh',
@@ -63,7 +63,33 @@ export const config = {
     greeting: 'Thân mời',
     guestFallback: 'bạn',
     lead: 'đến chung vui trong ngày',
-    closing: 'Sự hiện diện của bạn là niềm vui lớn của mình 💚',
+  },
+
+  wishes: {
+    send: 'Gửi lời nhắn',
+    inbox: 'Hộp lời chúc',
+    title: 'Một lời chúc nhỏ',
+    from: 'Từ',
+    name: 'Tên của bạn',
+    editName: 'Sửa tên',
+    message: 'Lời chúc của bạn',
+    placeholder: 'Nguyên ơi, chúc bạn…',
+    privacy: 'Lời chúc sẽ xuất hiện trong hộp lời chúc chung 💌',
+    submit: 'Gửi đến Nguyên',
+    sending: 'Đang gửi lời chúc…',
+    packing: 'Gói lại',
+    sent: 'Bay đii',
+    close: 'Đóng',
+    loading: 'Đang mở những lá thư…',
+    empty: 'Hộp thư đang chờ lời chúc đầu tiên. Bạn mở hàng nhé?',
+    more: 'Xem thêm lời chúc',
+    retry: 'Thử lại',
+    loadError: 'Chưa mở được hộp thư. Bạn thử lại nhé!',
+    sendError: 'Thư chưa gửi được. Lời chúc vẫn ở đây, bạn thử lại nhé!',
+    slowDown: 'Thư trước vừa bay đi rồi. Bạn đợi một chút rồi gửi tiếp nhé!',
+    nameRequired: 'Bạn cho Nguyên biết tên nhé!',
+    messageRequired: 'Bạn viết một lời chúc nhỏ nhé!',
+    thanks: (name: string) => `Cảm ơn ${name} nhé!`,
   },
 
   /** Ảnh minh hoạ tạm dùng khi thư mục photos/ còn trống */

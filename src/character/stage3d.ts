@@ -185,6 +185,10 @@ export class Stage3D extends BaseActor {
     this.rig?.setSpeaking(on);
   }
 
+  protected applyBow(amount: number) {
+    this.rig?.setBow(amount);
+  }
+
   /** nhìn về phía điểm (px) trên màn hình */
   lookAt(px: number, py: number) {
     const { x, y, h } = this.anchor;

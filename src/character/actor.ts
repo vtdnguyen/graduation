@@ -54,6 +54,7 @@ export interface Actor {
   headBox(): HeadBox;
   /** xoay vòng tại chỗ (easter egg chóng mặt) */
   spin(turns?: number, duration?: number): Promise<void>;
+  bow(): Promise<void>;
   snapshot(): Promise<Snapshot | null>;
   /** ánh sáng theo buổi (chỉ bản 3D) */
   setMood?(m: 'day' | 'sunset' | 'night'): void;
@@ -82,6 +83,22 @@ export abstract class BaseActor implements Actor {
   /** góc xoay vòng hiện tại (rad), cộng thêm vào hướng mặt */
   protected spinAngle = 0;
   private spinning = false;
+  private bowing = false;
+  protected abstract applyBow(amount: number): void;
+
+  async bow(): Promise<void> {
+    if (this.busy || this.resting) return;
+    this.bowing = true;
+    clearTimeout(this.reactTimer);
+    this.setAction('idle');
+    const pose = { amount: 0 };
+    const tl = gsap.timeline({ onUpdate: () => this.applyBow(pose.amount) });
+    tl.to(pose, { amount: 1, duration: 0.65, ease: 'sine.inOut' });
+    tl.to(pose, { amount: 0, duration: 0.65, delay: 0.35, ease: 'sine.inOut' });
+    await tl;
+    this.applyBow(0);
+    this.bowing = false;
+  }
 
   spin(turns = 2, duration = 1.15): Promise<void> {
     if (this.spinning || this.jumping || this.resting) return Promise.resolve();
@@ -109,7 +126,7 @@ export abstract class BaseActor implements Actor {
   protected lift = 0;
 
   get busy() {
-    return this.jumping || this.spinning;
+    return this.jumping || this.spinning || this.bowing;
   }
 
   setAction(a: ActionName) {
@@ -203,7 +220,7 @@ export abstract class BaseActor implements Actor {
 
   /** Khi bị chạm: ngẫu nhiên nhảy tại chỗ hoặc tung hô (tung mũ) */
   react(): Reaction | null {
-    if (this.jumping || this.resting) return null;
+    if (this.busy || this.resting) return null;
     if (Math.random() < 0.5) {
       void this.jumpTo({ ...this.anchor }, { duration: 0.55, height: this.anchor.h * 0.35 });
       return 'jump';

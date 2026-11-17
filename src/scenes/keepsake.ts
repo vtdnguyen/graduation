@@ -365,10 +365,13 @@ export class KeepsakeView {
       share.addEventListener('click', () => void navigator.share({ files: [file], title: 'Thiệp mời tốt nghiệp' }).catch(() => {}));
       this.actions.append(share);
     }
-    const dl = el('a', 'ks-btn', `${icons.download}<span>Tải ảnh</span>`) as HTMLAnchorElement;
-    dl.href = url;
-    dl.download = fileName;
-    this.actions.append(dl);
+    else {
+      // Máy không hỗ trợ chia sẻ file vẫn lưu được bằng cùng một nút xanh.
+      const save = el('a', 'ks-btn ks-primary', `${icons.share}<span>Chia sẻ / Lưu ảnh</span>`) as HTMLAnchorElement;
+      save.href = url;
+      save.download = fileName;
+      this.actions.append(save);
+    }
   }
 
   hide() {

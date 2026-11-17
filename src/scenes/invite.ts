@@ -8,6 +8,7 @@ import type { Config } from '../config';
 import { el, escapeHtml } from '../lib/util';
 import { countdown, vnParts } from '../lib/date';
 import { cornerFloral, icons } from '../art/svg';
+import { wishIcons } from '../art/wish-icons';
 
 export class Invite {
   readonly root = el('div', 'invite');
@@ -20,6 +21,7 @@ export class Invite {
     parent: HTMLElement,
     private cfg: Config,
     guest: string,
+    onWish: () => void,
   ) {
     const g = cfg.graduate;
     const ev = cfg.event;
@@ -33,7 +35,6 @@ export class Invite {
       `<p class="inv-lead inv-item">${escapeHtml(cfg.invite.lead)}</p>` +
       `<h2 class="inv-title inv-item">${escapeHtml(ev.title)}</h2>` +
       `<h1 class="inv-name inv-item">${escapeHtml(g.shortName)}</h1>` +
-      `<p class="inv-major inv-item">Ngành ${escapeHtml(g.major)}</p>` +
       `<div class="inv-divider inv-item"><span></span><i>${icons.cap}</i><span></span></div>` +
       `<div class="inv-when inv-item">` +
       `<div class="inv-time">${d.time}</div>` +
@@ -42,7 +43,7 @@ export class Invite {
       `</div>` +
       `<div class="inv-count inv-item" aria-label="Đếm ngược"></div>` +
       `<div class="inv-where inv-item"><i>${icons.pin}</i><div><strong>${escapeHtml(ev.venue)}</strong><span>${escapeHtml(ev.address)}</span></div></div>` +
-      `<p class="inv-closing inv-item">${escapeHtml(cfg.invite.closing)}</p>` +
+      `<button type="button" class="inv-wish inv-item" aria-label="${escapeHtml(cfg.wishes.send)}" title="${escapeHtml(cfg.wishes.send)}"><span>${escapeHtml(cfg.wishes.send)}</span>${wishIcons.send}</button>` +
       `</div>`;
 
     this.paper.innerHTML = corners;
@@ -50,6 +51,7 @@ export class Invite {
     this.root.append(this.paper);
     parent.append(this.root);
     this.countEl = this.scroll.querySelector('.inv-count')!;
+    this.scroll.querySelector('.inv-wish')!.addEventListener('click', onWish);
     gsap.set(this.root, { autoAlpha: 0 });
     this.tick();
   }
@@ -67,7 +69,11 @@ export class Invite {
     this.setWidth(w, availH, portrait);
     const body = this.scroll.firstElementChild as HTMLElement;
     const cs = getComputedStyle(this.scroll);
-    return Math.ceil(body.offsetHeight + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom));
+    // Đo nội dung tự nhiên, không lấy chiều cao đã giãn theo khung thiệp lần trước.
+    body.style.flex = 'none';
+    const natural = Math.ceil(body.offsetHeight + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom));
+    body.style.flex = '';
+    return natural;
   }
 
   relayout(L: Layout) {

@@ -57,6 +57,10 @@ export class Actor2D extends BaseActor {
     this.root.classList.toggle('speaking', on);
   }
 
+  protected applyBow(amount: number) {
+    gsap.set(this.inner, { scaleY: 1 - 0.18 * amount, rotation: 8 * amount, transformOrigin: '50% 95%' });
+  }
+
   protected setPhase(p: JumpPhase) {
     if (p === 'crouch') gsap.to(this.inner, { scaleY: 0.82, scaleX: 1.1, duration: 0.15, transformOrigin: '50% 100%' });
     else if (p === 'air') gsap.to(this.inner, { scaleY: 1.08, scaleX: 0.94, duration: 0.15 });

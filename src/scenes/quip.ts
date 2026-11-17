@@ -34,6 +34,12 @@ export class Quip {
     this.show(text, head, W, safeTop, 2);
   }
 
+  hide() {
+    this.hideCall?.kill();
+    gsap.killTweensOf(this.root);
+    gsap.set(this.root, { autoAlpha: 0 });
+  }
+
   /** hiện một câu bất kỳ trong `seconds` giây */
   show(text: string, head: HeadBox, W: number, safeTop: number, seconds = 3) {
     this.box.textContent = text;

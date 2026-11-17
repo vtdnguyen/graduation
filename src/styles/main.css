@@ -29,7 +29,7 @@
 
 html {
   /* nền dự phòng nếu còn chỗ hở: trên là trời, dưới là cỏ (Safari lấy màu trời để tô thanh trạng thái) */
-  background: #8fd3ff linear-gradient(#8fd3ff 50%, #7fd06e 50%) no-repeat;
+  background: #5fbb5a linear-gradient(#8fd3ff 0%, #8fd3ff 45%, #7fd06e 65%, #5fbb5a 100%) no-repeat;
   background-size: 100% 100%;
 }
 html,
@@ -59,23 +59,28 @@ body {
   overflow: hidden;
   background: linear-gradient(180deg, #8fd3ff 0%, #c4ebff 45%, #fff3d9 100%);
 }
-/* iOS Safari: phủ cả màn hình (gồm phần dưới thanh điều khiển trong suốt và vùng trên cùng);
-   bố cục bên trong vẫn chỉ dùng vùng nhìn thấy (main.ts đo .svh-probe) */
+/* Nền iOS nằm trong trang và phủ large viewport; các điều khiển dùng visualViewport
+   + safe-area riêng, không thêm padding vào cả body làm cụt nền. */
+.ios-edge,
+.ios-edge body {
+  height: auto;
+  min-height: 100%;
+  min-height: 100lvh;
+}
+.ios-edge body {
+  min-height: max(100lvh, var(--scene-screen-height, 100%));
+  background-color: #5fbb5a;
+}
 .ios-edge #app {
+  position: absolute;
   bottom: auto;
-  height: 100vh;
-  height: 100lvh;
+  height: auto;
+  min-height: 100%;
+  min-height: 100lvh;
+  min-height: max(100lvh, var(--scene-screen-height, 100%));
 }
-.svh-probe {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 0;
-  height: 100vh;
-  height: 100svh;
-  visibility: hidden;
-  pointer-events: none;
-}
+.ios-edge[data-sky='night'], .ios-edge[data-sky='night'] body { background-color: #234932; }
+.ios-edge[data-sky='sunset'], .ios-edge[data-sky='sunset'] body { background-color: #527b49; }
 #app.over-actor {
   cursor: pointer;
 }
@@ -1127,7 +1132,10 @@ svg {
   padding: 8px 15px 9px;
   font: 700 clamp(14px, 0.6vw + 10px, 17px) / 1.35 var(--f-body);
   color: var(--ink);
-  white-space: nowrap;
+  white-space: normal;
+  max-width: min(300px, calc(100vw - 24px));
+  overflow-wrap: anywhere;
+  text-align: center;
   box-shadow: 0 10px 24px rgba(40, 80, 40, 0.18);
 }
 .quip-box::after {
@@ -1231,11 +1239,12 @@ svg {
   display: none;
 }
 .inv-body {
-  flex: none;
+  flex: 1 0 auto;
   margin: auto 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: space-between;
   text-align: center;
   gap: calc(var(--u) * 1.3);
 }
@@ -1388,13 +1397,6 @@ svg {
   font: italic 400 clamp(13px, calc(var(--u) * 3.8), 15.5px) / 1.4 var(--f-l-body);
   color: #5d6b5d;
 }
-.inv-closing {
-  text-wrap: balance;
-  font: italic 400 clamp(13px, calc(var(--u) * 3.8), 16px) / 1.45 var(--f-l-body);
-  color: var(--muted);
-  margin-top: calc(var(--u) * 1.6) !important;
-  max-width: 92%;
-}
 /* màn hình dọc / thấp: gọn chữ để thiệp không che hết khu vườn */
 .invite.compact .inv-lead {
   display: none;
@@ -1403,7 +1405,7 @@ svg {
   padding: 22px 20px 18px;
 }
 .invite.compact .inv-body {
-  gap: 4px;
+  gap: 6px;
 }
 .invite.compact .inv-greet {
   font-size: 17px;
@@ -1451,19 +1453,12 @@ svg {
 .invite.compact .inv-where span {
   font-size: 13.5px;
 }
-.invite.compact .inv-closing {
-  margin-top: 4px !important;
-  font-size: 13.5px;
-}
 /* rất thấp (iPhone SE, điện thoại xoay ngang) */
 .invite.tight .inv-scroll {
   padding: 16px 18px 14px;
 }
 .invite.tight .inv-name {
   font-size: 44px;
-}
-.invite.tight .inv-closing {
-  display: none;
 }
 
 /* ---------------- XEM ẢNH LỚN ---------------- */
@@ -1545,7 +1540,7 @@ svg {
 .hud {
   position: fixed;
   z-index: 60;
-  top: calc(env(safe-area-inset-top) + 8px);
+  top: calc(var(--visible-top, 0px) + env(safe-area-inset-top) + 8px);
   right: calc(env(safe-area-inset-right) + 8px);
   display: flex;
   gap: 8px;
@@ -1903,6 +1898,6 @@ html[data-sky='night'] .intro-backdrop {
 .og .hud,
 .og .hud-reset,
 .og .inv-count,
-.og .inv-closing {
+.og .inv-wish {
   display: none !important;
 }

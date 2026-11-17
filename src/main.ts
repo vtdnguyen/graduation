@@ -27,6 +27,7 @@ import '@fontsource/lora/vietnamese-400-italic.css';
 import '@fontsource/lora/latin-500.css';
 import '@fontsource/lora/vietnamese-500.css';
 import './styles/main.css';
+import './styles/wishes.css';
 import { gsap } from 'gsap';
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
 import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
@@ -48,6 +49,7 @@ import { Dialogue } from './scenes/dialogue';
 import { Invite } from './scenes/invite';
 import { Hud } from './scenes/hud';
 import { Quip } from './scenes/quip';
+import { Wishes } from './scenes/wishes';
 import { Petals } from './fx/petals';
 import { GardenInsects } from './fx/garden-insects';
 import type { Actor } from './character/actor';
@@ -63,6 +65,12 @@ const requestedMood = new URLSearchParams(location.search).get('sky');
 let mood: Mood = flags.og ? 'day' : requestedMood === 'night' || requestedMood === 'sunset' ? requestedMood : 'day';
 const returning = isReturningVisitor();
 function updateThemeColor() {
+  // Safari có thể dùng theme-color cho cả thanh dưới, tạo dải xanh trời dưới vườn.
+  // Để Safari tự lấy màu từ nội dung ở từng mép màn hình.
+  if (device.ios) {
+    document.querySelector('meta[name="theme-color"]')?.remove();
+    return;
+  }
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', { day: '#8fd3ff', sunset: '#6d78c4', night: '#1d2457' }[mood]);
 }
 updateThemeColor();
@@ -71,9 +79,6 @@ document.documentElement.classList.toggle('touch', device.touch);
 document.documentElement.classList.toggle('reduced', device.reducedMotion);
 // iPhone/iPad: cho khu vườn tràn xuống dưới thanh điều khiển & lên vùng trên cùng của Safari (như các trang khác)
 document.documentElement.classList.toggle('ios-edge', device.ios);
-const svhProbe = document.createElement('div');
-svhProbe.className = 'svh-probe';
-document.body.append(svhProbe);
 if (device.inApp) document.documentElement.dataset.inapp = device.inAppName ?? '';
 document.body.insertAdjacentHTML('afterbegin', symbolSprite());
 
@@ -126,15 +131,20 @@ petals.setMood(mood);
 audio.night = mood === 'night';
 let gardenInsectsStarted = false;
 const dialogue = new Dialogue(app);
-const invite = new Invite(app, config, guest);
+const invite = new Invite(app, config, guest, () => wishes.compose());
 const quip = new Quip(app, config.quips);
+const wishes = new Wishes(guest, device.reducedMotion,
+  () => { clearTimeout(restTimer); quip.hide(); },
+  () => { onResize(); armRest(); },
+  (name) => thankGuest(name),
+);
 const hud = new Hud(
   document.body,
   () => skipToFinal(),
-  () => location.reload(),
   () => void saveKeepsake(),
   (night) => setMood(night ? 'night' : 'day'),
   mood === 'night',
+  () => wishes.inbox(),
 );
 
 // ---------- lưu thiệp về máy (module tải khi bấm) ----------
@@ -233,13 +243,27 @@ async function waitActor(maxMs: number): Promise<Actor> {
 
 // ---------- bố cục ----------
 function relayout() {
+  if (device.ios) {
+    // Chỉ mở rộng lớp vẽ, không dùng screen.height để đặt nút/thiệp.
+    // Một số Safari báo large viewport vẫn ngắn hơn màn hình phía sau toolbar.
+    const landscape = window.innerWidth > window.innerHeight;
+    const screenW = landscape ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+    const screenH = landscape ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height);
+    const fullWidth = Math.abs(screenW - window.innerWidth) < 4;
+    app.style.setProperty('--scene-screen-height', `${fullWidth ? screenH : window.innerHeight}px`);
+    document.body.style.setProperty('--scene-screen-height', `${fullWidth ? screenH : window.innerHeight}px`);
+  }
   const W = app.clientWidth;
   const H = app.clientHeight;
   const safe = readSafeArea();
   // Khung cảnh có thể cao hơn vùng nhìn thấy (iOS: tràn dưới thanh điều khiển). Phần bị thanh che
   // được tính như safe-area dưới → nhân vật, thiệp, nút luôn nằm trong vùng nhìn thấy.
-  const visibleH = Math.min(H, svhProbe.offsetHeight || window.innerHeight || H);
-  if (H - visibleH > 1) safe.bottom = Math.max(safe.bottom, H - visibleH);
+  const viewport = window.visualViewport;
+  const visibleTop = Math.max(0, (viewport?.offsetTop ?? 0) - app.getBoundingClientRect().top);
+  const visibleH = Math.min(H - visibleTop, viewport?.height ?? window.innerHeight ?? H);
+  safe.top += visibleTop;
+  safe.bottom += Math.max(0, H - visibleTop - visibleH);
+  document.documentElement.style.setProperty('--visible-top', `${viewport?.offsetTop ?? 0}px`);
   const ih = invite.measure(inviteWidth(W, H), visibleH, isPortrait(W, H));
   L = computeLayout(W, H, safe, photos.length, ih);
   document.documentElement.classList.toggle('portrait', L.portrait);
@@ -257,12 +281,14 @@ function relayout() {
 }
 let raf = 0;
 const onResize = () => {
+  if (wishes.isOpen) return;
   cancelAnimationFrame(raf);
   raf = requestAnimationFrame(relayout);
 };
 window.addEventListener('resize', onResize);
 window.addEventListener('orientationchange', () => setTimeout(relayout, 250));
 window.visualViewport?.addEventListener('resize', onResize);
+window.visualViewport?.addEventListener('scroll', onResize);
 // font tải xong làm đổi chiều cao chữ → đo lại thiệp mời
 void document.fonts?.ready.then(onResize);
 
@@ -357,7 +383,7 @@ async function open() {
 async function showFinal(a: Actor, id: number) {
   state = 'final';
   hud.showSkip(false);
-  hud.showReset(true, 1.6);
+  hud.showFinalActions(true, 1.6);
   a.setSpeaking(false);
   audio.play('whoosh', { volume: 0.6 });
   invite.show();
@@ -392,7 +418,7 @@ async function skipToFinal() {
   fpsArmed = true;
   state = 'final';
   hud.showSkip(false);
-  if (!flags.og) hud.showReset(true, 0.4);
+  if (!flags.og) hud.showFinalActions(true, 0.4);
   invite.setShown();
   afterOpen();
   const a = await waitActor(6000);
@@ -408,8 +434,8 @@ async function skipToFinal() {
 }
 
 // ---------- tương tác: chỉ với nhân vật (+ chạm để qua câu thoại) ----------
-const canTouchActor = () => (state === 'dialogue' || state === 'final') && !!actor;
-let actorTapAt = 0;
+const canTouchActor = () => (state === 'dialogue' || state === 'final') && !!actor && !wishes.isOpen && !thanking;
+let actorTapAt = -Infinity;
 let actorTapped = false;
 
 // ---------- cảnh cuối: ~6 giây không ai bấm → nhân vật vươn vai, cầm mũ, nằm nghỉ ----------
@@ -417,6 +443,24 @@ const REST_AFTER = 8000;
 let restTimer = 0;
 /** đang ngồi dậy → các lần bấm dồn chỉ thả tim, không chồng động tác */
 let waking = false;
+let thanking = false;
+
+async function thankGuest(name: string) {
+  thanking = true;
+  clearTimeout(restTimer);
+  tapTimes.length = 0;
+  try {
+    const a = actor ?? await waitActor(6000);
+    while (a.busy || waking) await sleep(50);
+    if (a.resting) await a.getUp();
+    a.lookAway?.();
+    audio.play('chime', { volume: 0.65 });
+    quip.show(config.wishes.thanks(name), a.headBox(), L.W, L.safe.top, 4.5);
+    const head = a.headBox();
+    petals.hearts(head.x, head.y - head.r);
+    await a.bow();
+  } finally { thanking = false; armRest(); }
+}
 
 function armRest(delay = REST_AFTER) {
   clearTimeout(restTimer);
@@ -426,7 +470,7 @@ function armRest(delay = REST_AFTER) {
     const a = actor;
     if (!a || id !== runId || state !== 'final') return;
     // đang bận (nhảy / ngồi dậy / đang xem ảnh) → đợi thêm chút
-    if (waking || a.busy || lightbox.isOpen) return armRest(1200);
+    if (waking || a.busy || lightbox.isOpen || wishes.isOpen || thanking) return armRest(1200);
     a.setAction('idle');
     const done = await a.lieDown();
     if (done && id === runId) showTapHintOnce(a);
@@ -443,7 +487,7 @@ function hintShown() {
   }
 }
 function showTapHintOnce(a: Actor) {
-  if (actorTapped || hintShown()) return;
+  if (actorTapped || hintShown() || wishes.isOpen || thanking) return;
   try {
     sessionStorage.setItem(TAP_HINT_KEY, '1');
   } catch {
