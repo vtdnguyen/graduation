@@ -11,7 +11,9 @@ type Wish = { id: string; name: string; message: string; created_at: number };
 export class Wishes {
   private root = el('div', 'wishes-overlay');
   private panel = el('section', 'wishes-panel');
+  private header = el('div', 'wish-header');
   private content = el('div', 'wishes-content');
+  private actions = el('div', 'wish-actions');
   private closeButton = el('button', 'wish-round wish-close', wishIcons.close);
   private status = el('p', 'wish-status');
   private form = el('form', 'wish-form');
@@ -29,28 +31,39 @@ export class Wishes {
   private listRun = 0;
   private request: AbortController | null = null;
   private viewportFrame = 0;
+  private viewportUntil = 0;
   private openingHeight = 0;
   private viewport = () => {
-    cancelAnimationFrame(this.viewportFrame);
-    this.viewportFrame = requestAnimationFrame(() => {
+    // iOS có thể cập nhật viewport muộn hơn focus/resize trong lúc bàn phím chạy.
+    // Theo dõi ngắn hạn, không tạo thêm một vòng render thường trực.
+    this.viewportUntil = performance.now() + 700;
+    if (this.viewportFrame) return;
+    const update = () => {
+      this.viewportFrame = 0;
       if (!this.opened) return;
       const v = window.visualViewport;
-      const height = v?.height ?? window.innerHeight;
+      const height = Math.min(v?.height ?? window.innerHeight, window.innerHeight);
       const active = document.activeElement;
       const editing = active === this.message || active === this.nameInput;
-      this.root.classList.toggle('wish-keyboard', this.openingHeight - height > 120 || (editing && height < 500));
+      const mobile = matchMedia('(pointer: coarse)').matches;
+      this.root.classList.toggle('wish-keyboard', this.openingHeight - height > 120 || (editing && mobile));
       this.root.style.height = `${height}px`;
-      const pageOffset = document.documentElement.classList.contains('ios-edge') ? window.scrollY : 0;
-      this.root.style.top = `${pageOffset + (v?.offsetTop ?? 0)}px`;
+      const ios = document.documentElement.classList.contains('ios-edge');
+      // pageTop là tọa độ document; không cộng scrollY lần nữa khi WKWebView pan.
+      const top = ios ? (v?.pageTop ?? window.scrollY + (v?.offsetTop ?? 0)) : (v?.offsetTop ?? 0);
+      this.root.style.top = `${Math.max(0, top)}px`;
       this.root.style.setProperty('--wish-visible-height', `${height}px`);
       // Cuộn riêng nội dung panel, không kéo cả trang theo ô nhập trên Safari.
       if (editing) {
         const field = (active as HTMLElement).getBoundingClientRect();
         const area = this.content.getBoundingClientRect();
-        if (field.bottom > area.bottom - 8) this.content.scrollTop += field.bottom - area.bottom + 8;
+        if (field.height > area.height - 16) this.content.scrollTop += field.top - area.top - 8;
+        else if (field.bottom > area.bottom - 8) this.content.scrollTop += field.bottom - area.bottom + 8;
         else if (field.top < area.top + 8) this.content.scrollTop -= area.top + 8 - field.top;
       }
-    });
+      if (performance.now() < this.viewportUntil) this.viewportFrame = requestAnimationFrame(update);
+    };
+    update();
   };
 
   constructor(guest: string, private reduced: boolean, private onOpen: () => void, private onClose: () => void, private onSent: (name: string) => Promise<void>) {
@@ -64,7 +77,14 @@ export class Wishes {
     this.closeButton.setAttribute('aria-label', copy.close);
     this.closeButton.addEventListener('click', () => this.close());
     this.root.addEventListener('click', (e) => { if (e.target === this.root) this.close(); });
-    this.root.addEventListener('focusin', this.viewport);
+    this.root.addEventListener('focusin', (event) => {
+      if (event.target === this.nameInput || event.target === this.message) {
+        // Không scale/move tổ tiên của caret khi người dùng chạm sớm lúc panel mở.
+        gsap.killTweensOf(this.panel);
+        gsap.set(this.panel, { opacity: 1, clearProps: 'transform' });
+      }
+      this.viewport();
+    });
     this.root.addEventListener('focusout', this.viewport);
     this.root.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') { e.preventDefault(); this.close(); }
@@ -81,7 +101,8 @@ export class Wishes {
     });
     this.status.setAttribute('role', 'status');
     this.status.setAttribute('aria-live', 'polite');
-    this.panel.append(this.closeButton, this.content, this.status);
+    this.header.append(this.closeButton);
+    this.panel.append(this.header, this.content, this.actions, this.status);
     this.root.append(this.panel);
     document.body.append(this.root);
     this.buildForm();
@@ -102,15 +123,16 @@ export class Wishes {
     this.nameInput.setAttribute('aria-label', copy.name);
     this.editButton.type = 'button';
     this.editButton.setAttribute('aria-label', copy.editName);
-    this.editButton.addEventListener('click', () => { this.editName(true); this.nameInput.focus(); this.nameInput.select(); });
+    this.editButton.addEventListener('click', () => { this.editName(true); this.nameInput.focus({ preventScroll: true }); this.nameInput.select(); });
     this.nameInput.addEventListener('input', () => this.nameInput.setCustomValidity(''));
     this.nameInput.addEventListener('blur', () => {
       this.sender = this.nameInput.value.trim();
-      if (this.sender) this.editName(false);
+      // Không thay input bằng text lúc chuyển ô: Safari đang định vị caret/Next.
     });
     this.nameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); this.message.focus(); }
+      if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); this.message.focus({ preventScroll: true }); }
     });
+    this.nameInput.enterKeyHint = 'next';
     from.append(label, this.nameText, this.nameInput, this.editButton);
     Object.assign(this.message, { name: 'message', rows: 3, maxLength: 600, required: true, placeholder: copy.placeholder });
     this.message.setAttribute('aria-label', copy.message);
@@ -120,8 +142,11 @@ export class Wishes {
     note.textContent = copy.privacy;
     this.message.setAttribute('aria-describedby', note.id);
     this.submit.type = 'submit';
+    this.form.id = 'wish-compose';
+    this.submit.setAttribute('form', this.form.id);
     this.submit.innerHTML = `${wishIcons.send}<span>${escapeHtml(copy.submit)}</span>`;
-    this.form.append(from, this.message, note, this.submit);
+    this.form.append(from, this.message, note);
+    this.actions.append(this.submit);
     this.form.addEventListener('submit', (e) => { e.preventDefault(); void this.send(); });
   }
 
@@ -142,6 +167,7 @@ export class Wishes {
       this.previousFocus = document.activeElement as HTMLElement;
       this.opened = true;
       this.openingHeight = window.visualViewport?.height ?? window.innerHeight;
+      this.root.classList.remove('wish-keyboard');
       this.root.hidden = false;
       this.background = [...document.body.children].filter((node): node is HTMLElement => node instanceof HTMLElement && node !== this.root && !['SCRIPT', 'STYLE'].includes(node.tagName))
         .map((node) => ({ node, aria: node.getAttribute('aria-hidden'), inert: node.hasAttribute('inert') }));
@@ -155,7 +181,7 @@ export class Wishes {
       audio.start();
       audio.play('pop', { volume: 0.4 });
       this.onOpen();
-      gsap.fromTo(this.panel, { opacity: 0, y: this.reduced ? 0 : 24, scale: this.reduced ? 1 : 0.92 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'back.out(1.5)' });
+      gsap.fromTo(this.panel, { opacity: 0, y: this.reduced ? 0 : 24, scale: this.reduced ? 1 : 0.92 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'back.out(1.5)', clearProps: 'transform' });
     }
     return true;
   }
@@ -163,16 +189,26 @@ export class Wishes {
   compose() {
     if (!this.open()) return;
     this.panel.classList.remove('wishes-inbox');
-    this.content.innerHTML = this.heading(copy.title);
+    this.root.classList.add('wish-compose');
+    this.header.innerHTML = this.heading(copy.title);
+    this.header.append(this.closeButton);
+    this.content.replaceChildren();
+    this.content.scrollTop = 0;
+    this.actions.hidden = false;
     this.editName(!this.sender);
     this.content.append(this.form);
     this.panel.focus({ preventScroll: true });
+    this.viewport();
   }
 
   inbox() {
     if (!this.open()) return;
     this.panel.classList.add('wishes-inbox');
-    this.content.innerHTML = this.heading(copy.inbox);
+    this.root.classList.remove('wish-compose');
+    this.header.innerHTML = this.heading(copy.inbox);
+    this.header.append(this.closeButton);
+    this.content.replaceChildren();
+    this.actions.hidden = true;
     const list = el('div', 'wish-list');
     const more = el('button', 'wish-secondary');
     more.type = 'button';
@@ -227,6 +263,7 @@ export class Wishes {
     if (!this.opened || (this.sending && !force)) return;
     this.opened = false;
     cancelAnimationFrame(this.viewportFrame);
+    this.viewportFrame = 0;
     this.listRun++;
     this.request?.abort();
     gsap.killTweensOf(this.panel);
@@ -257,6 +294,7 @@ export class Wishes {
       this.pending = { signature, id };
     }
     this.sending = true;
+    this.panel.focus({ preventScroll: true });
     this.submit.disabled = this.closeButton.disabled = this.editButton.disabled = true;
     this.nameInput.readOnly = this.message.readOnly = true;
     this.panel.setAttribute('aria-busy', 'true');

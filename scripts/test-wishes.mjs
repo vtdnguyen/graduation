@@ -37,11 +37,11 @@ try {
     assert.equal(response.status(), 201);
     await route.abort('failed');
   }, { times: 1 });
-  await page.locator('.wish-form .wish-primary').click();
+  await page.locator('.wish-actions .wish-primary').click();
   await page.getByText('Thư chưa gửi được.', { exact: false }).waitFor();
   assert.equal(await page.locator('.wish-message').inputValue(), message);
   const posted = page.waitForRequest((r) => r.method() === 'POST' && r.url().endsWith('/api/wishes'));
-  await page.locator('.wish-form .wish-primary').click();
+  await page.locator('.wish-actions .wish-primary').click();
   assert.equal((await posted).postDataJSON().id, originalId);
   await page.locator('.wish-flight').waitFor();
   await page.locator('.wishes-overlay').waitFor({ state: 'hidden' });
@@ -96,7 +96,7 @@ try {
   await page.locator('.inv-wish').click();
   await page.locator('.wish-message').fill('Chúc mừng Nguyên!');
   await page.route('**/api/wishes', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }));
-  await page.locator('.wish-form .wish-primary').click();
+  await page.locator('.wish-actions .wish-primary').click();
   await page.locator('.wishes-overlay').waitFor({ state: 'hidden' });
   await page.getByText('Cảm ơn An nhé!', { exact: true }).waitFor({ state: 'visible' });
   await shot(page, 'wishes-webkit-thanks');

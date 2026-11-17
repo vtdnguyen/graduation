@@ -59,6 +59,10 @@
   color: #35584b;
   outline: none;
 }
+.wish-header { position: relative; flex-shrink: 0; }
+.wish-header .wish-close { top: -13px; right: -13px; }
+.wish-header h2 { padding-inline: 28px; }
+.wish-actions { flex-shrink: 0; padding: 10px 4px 4px; }
 .wishes-content { overflow: auto; min-height: 0; padding: 3px 4px 7px; overscroll-behavior: contain; }
 .wishes-panel.wishes-inbox { height: 560px; }
 .wishes-inbox .wishes-content { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
@@ -66,14 +70,6 @@
 .wishes-inbox .wish-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .wishes-inbox .wish-card { flex-shrink: 0; }
 .wish-status { flex-shrink: 0; }
-.wish-keyboard { padding-top: 8px; padding-bottom: 8px; }
-.wish-keyboard .wishes-panel { max-height: calc(var(--wish-visible-height) - 16px); padding: 12px 18px; border-radius: 24px; }
-.wish-keyboard .wish-badge, .wish-keyboard .wish-note { display: none; }
-.wish-keyboard .wishes-panel h2 { font-size: 22px; margin: 0 38px 8px; }
-.wish-keyboard .wish-form { margin-top: 4px; gap: 8px; }
-.wish-keyboard .wish-message { height: 96px; min-height: 96px; resize: none; padding: 8px 12px; }
-.wish-keyboard .wish-primary { min-height: 46px; padding: 10px 14px; }
-.wish-keyboard .wish-close { top: 7px; right: 7px; }
 .wish-round { width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; color: #966479; background: #f7e7e7; }
 .wish-round svg { width: 21px; height: 21px; }
 .wish-close { position: absolute; right: 13px; top: 13px; z-index: 2; }
@@ -106,6 +102,8 @@
   border-radius: 18px;
   color: #35584b;
   padding: 10px 14px;
+  -webkit-user-select: text;
+  user-select: text;
 }
 .wish-name-input { flex: 1; width: 0; }
 .wish-message { width: 100%; resize: vertical; min-height: 120px; max-height: 240px; padding: 16px; border-radius: 22px; }
@@ -152,3 +150,32 @@
 .wish-card:nth-child(4n + 3) h3 { color: #88671d; }
 .wish-card:nth-child(4n + 4) { background: #e7f1ff; border-color: #cadcf5; }
 .wish-card:nth-child(4n + 4) h3 { color: #456fa1; }
+
+/* Form điện thoại giữ cùng thứ tự/kích thước khi đổi focus. Header và nút
+   nằm ngoài vùng cuộn, chỉ các trường cuộn khi màn hình thực sự thiếu chỗ. */
+@media (pointer: coarse) {
+  .wish-compose { align-items: flex-start; }
+  .wish-compose .wishes-panel { padding: 12px 14px; border-radius: 28px; }
+  .wish-compose .wish-badge { display: none; }
+  .wish-compose .wish-header { min-height: 44px; display: grid; align-items: center; }
+  .wish-compose .wish-header h2 { font-size: 22px; margin: 0; padding: 0 38px; }
+  .wish-compose .wish-close { top: 0; right: -4px; }
+  .wish-compose .wish-form { margin-top: 6px; gap: 10px; }
+  .wish-compose .wish-from { min-height: 46px; }
+  .wish-compose .wish-name-input { height: 46px; padding: 8px 12px; }
+  .wish-compose .wish-message { height: 100px; min-height: 100px; max-height: 100px; padding: 10px 12px; line-height: 24px; resize: none; }
+  .wish-compose .wish-primary { min-height: 48px; padding: 10px 14px; }
+}
+.wish-keyboard { padding-top: 8px; padding-bottom: 8px; align-items: flex-start; }
+.wish-keyboard .wishes-panel { max-height: 100%; padding: 8px 14px; border-radius: 24px; }
+.wish-keyboard .wish-badge, .wish-keyboard .wish-note { display: none; }
+.wish-keyboard .wish-header { min-height: 44px; display: grid; align-items: center; }
+.wish-keyboard .wish-header h2 { font-size: 22px; margin: 0; padding: 0 38px; }
+.wish-keyboard .wish-close { top: 0; right: -4px; }
+.wish-keyboard .wish-form { margin-top: 4px; gap: 8px; }
+.wish-keyboard .wish-from { min-height: 46px; }
+.wish-keyboard .wish-name-input { height: 46px; padding: 8px 12px; }
+.wish-keyboard .wish-message { height: clamp(48px, calc(var(--wish-visible-height) - 168px), 96px); min-height: 0; max-height: 96px; resize: none; padding: 10px 12px; line-height: 24px; }
+.wish-keyboard .wish-actions { padding-top: 6px; }
+.wish-keyboard .wish-primary { min-height: 46px; padding: 10px 14px; }
+.wish-keyboard .wish-status { margin-top: 6px; max-height: 44px; overflow-y: auto; }

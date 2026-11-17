@@ -299,8 +299,8 @@ function relayout() {
 }
 let raf = 0;
 const onResize = () => {
-  syncViewportUI();
   if (wishes.isOpen) return;
+  syncViewportUI();
   cancelAnimationFrame(raf);
   raf = requestAnimationFrame(relayout);
 };
