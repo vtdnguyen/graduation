@@ -35,6 +35,7 @@ import photoList from 'virtual:photos';
 
 import { config } from './config';
 import { detectDevice, flags, guestName } from './lib/device';
+import { lockSceneScroll } from './lib/scene-scroll';
 import { computeLayout, inviteWidth, isPortrait, readSafeArea, type Layout } from './lib/layout';
 import { audio } from './lib/audio';
 import { haptic, sleep } from './lib/util';
@@ -79,6 +80,7 @@ document.documentElement.classList.toggle('touch', device.touch);
 document.documentElement.classList.toggle('reduced', device.reducedMotion);
 // iPhone/iPad: cho khu vườn tràn xuống dưới thanh điều khiển & lên vùng trên cùng của Safari (như các trang khác)
 document.documentElement.classList.toggle('ios-edge', device.ios);
+if (device.ios) lockSceneScroll();
 if (device.inApp) document.documentElement.dataset.inapp = device.inAppName ?? '';
 document.body.insertAdjacentHTML('afterbegin', symbolSprite());
 

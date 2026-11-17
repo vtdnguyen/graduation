@@ -117,4 +117,5 @@ Xóa lời nhắn thử: `node scripts/clear-wishes.mjs --remote --name "Tên"` 
 - Không deploy cho tới khi chủ dự án yêu cầu. Dev dùng `npm run dev` (LAN), API local `npm run dev:api`.
 - `ios-edge` được đặt ngay trong head trước paint. Trên iOS, `#app` nằm trong document flow; HUD và modal dùng absolute + tọa độ trang từ visualViewport/scrollY, tránh fixed/sticky kích hoạt dải màu Safari. Nền dùng large viewport/screen height; nút dùng visualViewport + safe-area.
 - Probe safe-area là absolute ở (0,0), không làm dài trang. Các bản vá fixed/absolute và svh cũ ở phần lưu ý phía trên đã được thay thế.
+- `src/lib/scene-scroll.ts` khóa touch/wheel cuộn document trên iOS nhưng cho cuộn danh sách/panel/ô nhập còn khoảng cuộn. Tự trả scroll về 0 khi Safari dịch trang; tạm nhường pan khi nhập hoặc pinch zoom. Không đổi root thành fixed/overflow hidden vì sẽ mất nền tràn Safari. Kiểm thử bằng `node scripts/test-scene-scroll.mjs`.
 - Kiểm thử: `node scripts/test-ios-first-paint.mjs`, `node scripts/test-safe-viewport.mjs`, `node scripts/test-mobile-panels.mjs`. WebKit desktop không mô phỏng được thanh kính Safari thật; vẫn cần thử iPhone từ lần mở trang đầu.
